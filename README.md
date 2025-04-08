@@ -1,201 +1,265 @@
-# DSCPL - AI Agent #1
+# DSCPL (Daily Spiritual Content & Prayer Life) Assistant
 
-## 🧭 Overview
+## Project Overview
+DSCPL is an AI-powered spiritual assistance platform that combines state management, language models, and external APIs to provide personalized spiritual guidance. The project is built using a modern architecture that leverages LangGraph for workflow management and Google's Gemini Pro for content generation.
 
-**DSCPL** is your personal spiritual assistant, guiding you daily through devotionals, prayer, meditation, and accountability. Whether you're looking to grow in faith, seek support, or simply chat, DSCPL is designed to walk with you in every season.
+## Demo
+Watch the project demo: [DSCPL Demo Video](https://drive.google.com/file/d/1Ze55QYGP7Kr_P1cdgxjSioFwl1qHt8ux/view?usp=sharing)
 
----
+## Calendar Integration
+The application integrates with Google Calendar to help you stay on track with your spiritual journey:
+![Calendar Notifications](calender_notification.png)
 
-## 🌱 1. User Flow
+## System Architecture
+![DSCPL System Architecture](MERMAID_CHART.png)
 
-### ✅ Step 1: Initial Selection
+How to Run:
+--> ADD GOOGLE API KEY
+--> For Calender Notification add credential.json file in directory
+-->Create virtual Environment
+-->Run python main.py
+--> Start Conversation
+--> You can exit any time(type end or exit or stop)
 
-Upon launch, DSCPL welcomes the user with:
+## Code Architecture
 
-> *"What do you need today?"*
+### 1. Core Components
 
-Users can select from:
+#### State Management (`main.py`)
+The application uses LangGraph's `StateGraph` for managing user interactions and program flow:
 
-- **Daily Devotion**
-    - Watch video verses instead of reading
-    - Recreate the entire Bible verse-by-verse with video content  
-    - *[Inspiration Video Example](https://www.instagram.com/egypt.ontravelx/reel/DGOlYTeitul/)*
-- **Daily Prayer**
-- **Daily Meditation**
-- **Daily Accountability**
-- **Just Chat**
-    - Starts a conversation with the AI agent immediately
-
----
-
-### ✅ Step 2: Topic Selection
-
-Based on the chosen category, DSCPL provides pre-defined or user-customizable topics.
-
-#### Devotion Topics
-- Dealing with Stress
-- Overcoming Fear
-- Conquering Depression
-- Relationships
-- Healing
-- Purpose & Calling
-- Anxiety
-- Something else...
-
-#### Prayer Topics
-- Personal Growth
-- Healing
-- Family/Friends
-- Forgiveness
-- Finances
-- Work/Career
-- Something else...
-
-#### Meditation Topics
-- Peace
-- God's Presence
-- Strength
-- Wisdom
-- Faith
-- Something else...
-
-#### Accountability Areas
-- Pornography
-- Alcohol
-- Drugs
-- Sex
-- Addiction
-- Laziness
-- Something else...
-
-> 🧠 *Topics can be personalized based on user's preferences, history, and watched content.*
-
----
-
-### ✅ Step 3: Weekly Overview & Goal Setting
-
-DSCPL outlines a 7-day spiritual program:
-
-> *"By the end of this week, you will feel more connected to God and confident in resisting temptation."*
-
----
-
-### ✅ Step 4: User Confirmation
-
-DSCPL prompts:
-
-> *"Would you like to begin?"*
-
-- If *yes*, it schedules daily notifications and adds reminders to the user’s Google/Apple Calendar.
-
----
-
-### ✅ Step 5: Daily Program Delivery
-
-- Sends morning notification
-- Opens DSCPL with that day’s devotional content
-- Syncs with the user's calendar
-
----
-
-## 📖 2. Content Structure by Category
-
-### ✝️ Devotion Format
-
-1. **5-minute Bible Reading**  
-2. **Short Prayer**  
-3. **Faith Declaration**  
-4. **Recommended Video** (from in-app video feed)
-
-**Example:**
-
-- **Scripture:** Philippians 4:6-7  
-- **Prayer:** "Lord, help me release my anxieties and trust in You."  
-- **Declaration:** "God is my refuge, and I will not be shaken."  
-- **Video:** *Overcoming Fear with God’s Promises*
-
----
-
-### 🙏 Prayer Format (ACTS Model)
-
-1. **Adoration** – Praise God  
-2. **Confession** – Repentance  
-3. **Thanksgiving** – Gratitude  
-4. **Supplication** – Requests  
-
-Includes:
-- **Daily Prayer Focus Prompt**  
-  _E.g., Pray for someone who hurt you, or wisdom in a difficult situation_
-
----
-
-### 🧘 Meditation Format
-
-1. **Scripture Focus**  
-   _E.g., Psalm 46:10 - "Be still and know that I am God."_
-2. **Meditation Prompts**  
-   - What does this reveal about God?
-   - How can I live this out today?
-3. **Breathing Guide**  
-   - Inhale 4s → Hold 4s → Exhale 4s
-
----
-
-### 🛡️ Accountability Format
-
-1. **Scripture for Strength**  
-2. **Truth Declarations**  
-   _E.g., "I am not a slave to temptation; I am free in Christ."_
-3. **Alternative Actions**  
-   _Instead of [vice], try [healthy action]_
-4. **SOS Feature**  
-   - “I need help now!” button  
-   - Immediate encouragement  
-   - Scripture and action plan  
-   - Contact a friend/mentor (in-app DM)
-
----
-
-## 🧩 3. Technical Integration
-
-- 🔔 **Push Notifications**: For daily spiritual engagement  
-- 🎥 **Video API**: Curated faith-based content  
-- 🧾 **User Input Logging**: Tracks daily and weekly progress  
-- 🚨 **Emergency SOS**: For urgent accountability & emotional support  
-- 📅 **Calendar Sync**: Google/Apple integration
-
----
-
-## 🎛️ 4. Customization Features
-
-- 📝 Set **custom prayer/meditation goals**  
-- 📆 Choose **program length** (7, 14, 30 days)  
-- ❓ Ask **questions during programs**  
-- 📊 **Progress Dashboard**
-    - View history of completed programs
-    - Pause/resume or redo any past programs
-
----
-
-**Get All Posts** (Header required*) (METHOD: GET):
-
-   ```
-   https://api.socialverseapp.com/posts/summary/get?page=1&page_size=1000
-   ```
-
-### Authorization
-
-For autherization pass `Flic-Token` as header in the API request:
-
-Header:
-
-```json
-"Flic-Token": "flic_b1c6b09d98e2d4884f61b9b3131dbb27a6af84788e4a25db067a22008ea9cce5"
+```python
+class DSCPLStateMachine:
+    def __init__(self):
+        self.workflow = StateGraph(state_schema=dict)
+        
+        # Define nodes for different states
+        self.workflow.add_node("initial", self.initial_state)
+        self.workflow.add_node("select_category", self.select_category)
+        self.workflow.add_node("select_topic", self.select_topic)
+        # ... other nodes
 ```
----
 
-## 📌 Final Note
+Key State Transitions:
+- Initial → Category Selection
+- Category Selection → Topic Selection
+- Topic Selection → Program Length
+- Program Length → Confirmation
+- Confirmation → Content Delivery
 
-DSCPL isn't just an app — it's a **companion for your spiritual journey**. Rooted in scripture, empowered by technology, and guided by grace.
+#### Data Models (`models.py`)
 
----
+##### Enums for Content Organization
+```python
+class Category(str, Enum):
+    DEVOTION = "Daily Devotion"
+    PRAYER = "Daily Prayer"
+    MEDITATION = "Daily Meditation"
+    ACCOUNTABILITY = "Daily Accountability"
+    JUST_CHAT = "Just Chat"
+    PROGRESS = "View Progress"
+
+class DevotionTopic(str, Enum):
+    STRESS = "Dealing with Stress"
+    FEAR = "Overcoming Fear"
+    # ... other topics
+```
+
+##### Database Schema
+The application uses SQLite with four main tables:
+1. `user_sessions`: Tracks active user sessions
+2. `conversation_history`: Stores chat interactions
+3. `program_history`: Records program completion
+4. `daily_progress`: Tracks daily achievements
+
+### 2. Key Features Implementation
+
+#### Content Generation
+The system uses Google's Gemini Pro model for generating personalized content:
+
+```python
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-pro",
+    temperature=0
+)
+```
+
+Content types include:
+- Daily Devotionals (text/video)
+- Prayer Guidance
+- Meditation Scripts
+- Accountability Support
+
+#### State Management
+The `StateManager` class handles session persistence:
+
+```python
+class StateManager:
+    @staticmethod
+    def create_session(user_id: str) -> str:
+        # Creates new user session
+        pass
+
+    @staticmethod
+    def update_session(session_id: str, updates: Dict[str, Any]):
+        # Updates session state
+        pass
+```
+
+#### External Integrations
+
+##### Google Calendar Integration
+```python
+def create_calendar_events(session_id: str, program_length: int):
+    # Creates calendar events for program duration
+    pass
+```
+
+##### Social Verse API Integration
+```python
+class SocialVerseClient:
+    @staticmethod
+    def get_videos(topic: Optional[str] = None, max_results: int = 3):
+        # Fetches relevant video content
+        pass
+```
+
+### 3. Program Flow
+
+1. **Initialization**
+   - User session creation
+   - State initialization
+   - Database setup
+
+2. **Category Selection**
+   - User chooses program type
+   - State updates
+   - Topic selection preparation
+
+3. **Topic Selection**
+   - Category-specific topics
+   - Content type preference
+   - Program customization
+
+4. **Program Configuration**
+   - Length selection
+   - Time preference
+   - Calendar integration
+
+5. **Content Delivery**
+   - Daily content generation
+   - Progress tracking
+   - Notification management
+
+### 4. Technical Implementation Details
+
+#### State Machine Design
+The application uses a directed graph for state transitions:
+```python
+self.workflow.add_conditional_edges(
+    "select_category",
+    self.decide_after_category,
+    {
+        "just_chat": "just_chat",
+        "needs_topic": "select_topic",
+        "needs_length": "set_program_length",
+        "view_progress": "view_progress",
+        "complete": END
+    }
+)
+```
+
+#### Content Generation Pipeline
+1. Topic Analysis
+2. Content Type Selection
+3. LLM Processing
+4. Media Integration
+5. Delivery Scheduling
+
+#### Database Operations
+```python
+def init_db():
+    # Creates necessary tables
+    conn = sqlite3.connect(Config.DATABASE_NAME)
+    cursor = conn.cursor()
+    # Table creation SQL
+    conn.commit()
+    conn.close()
+```
+
+### 5. Security Features
+
+1. **Session Management**
+   - Unique session IDs
+   - State validation
+   - Secure storage
+
+2. **API Security**
+   - Environment variable protection
+   - Token management
+   - Rate limiting
+
+3. **Data Protection**
+   - SQLite encryption
+   - Secure credential storage
+   - Input validation
+
+### 6. Error Handling
+
+The application implements comprehensive error handling:
+```python
+try:
+    # Operation
+except ValueError:
+    # Handle invalid input
+except Exception as e:
+    # Handle unexpected errors
+```
+
+### 7. Performance Optimizations
+
+1. **Database Operations**
+   - Connection pooling
+   - Prepared statements
+   - Index optimization
+
+2. **Content Generation**
+   - Caching
+   - Batch processing
+   - Async operations
+
+3. **State Management**
+   - Efficient transitions
+   - Memory optimization
+   - State persistence
+
+## Code Organization
+
+```
+dscpl/
+├── main.py              # State machine and workflow
+├── models.py            # Data models and business logic
+├── requirements.txt     # Dependencies
+├── .env                # Environment configuration
+├── credentials.json    # API credentials
+└── dscpl_history.db    # SQLite database
+```
+
+## Key Dependencies
+- langgraph: State management
+- langchain-google-genai: LLM integration
+- google-auth-oauthlib: Google API authentication
+- python-dotenv: Environment management
+- httpx: HTTP client
+
+## Architecture Diagrams
+This file contains:
+
+1. Main.py State Machine Flow
+2. Models.py Class Structure
+3. Database Schema
+4. System Architecture
+5. Content Generation Flow
+6. Program Lifecycle
+
+These diagrams provide a visual representation of the application's architecture, data flow, and component relationships. 
