@@ -8,7 +8,7 @@ Watch the project demo: [DSCPL Demo Video](https://drive.google.com/file/d/1Ze55
 
 ## Calendar Integration
 The application integrates with Google Calendar to help you stay on track with your spiritual journey:
-![Calendar Notifications](calender_notification.png)
+![Calendar Notifications](Calender_notification.jpg)
 
 ## System Architecture
 ![DSCPL System Architecture](MERMAID_CHART.png)
