@@ -1,0 +1,14 @@
+streamlit
+langchain
+langchain-community
+langchain-groq
+langchain-core
+langchain-huggingface
+python-dotenv
+faiss-cpu
+ipykernel
+transformers
+torch
+sentence-transformers
+gradio==4.20.1
+pydantic==1.10.13
