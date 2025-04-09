@@ -1,3 +1,0 @@
-LANGCHAIN_API_KEY = "Your langchain_API key"
-GROQ_API_KEY = "Your Groq_API key"
-HF_TOKEN = "Your hugging face token"
