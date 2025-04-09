@@ -1,0 +1,182 @@
+# DSCPL Architecture Diagrams
+
+## 1. System Overview
+
+```mermaid
+graph TB
+    User[User] --> DSCPL[DSCPL Assistant]
+    DSCPL --> LLM[Gemini LLM]
+    DSCPL --> DB[(SQLite DB)]
+    DSCPL --> Calendar[Google Calendar]
+    DSCPL --> SocialVerse[Social Verse API]
+    
+    subgraph "Core Components"
+        DSCPL --> StateMachine[State Machine]
+        DSCPL --> ContentGen[Content Generator]
+        DSCPL --> NotifManager[Notification Manager]
+    end
+    
+    subgraph "Data Storage"
+        DB --> UserSessions[User Sessions]
+        DB --> ConvHistory[Conversation History]
+        DB --> ProgramHistory[Program History]
+        DB --> DailyProgress[Daily Progress]
+    end
+```
+
+## 2. State Machine Flow
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initial
+    Initial --> SelectCategory
+    SelectCategory --> SelectTopic: Needs Topic
+    SelectCategory --> JustChat: Just Chat
+    SelectCategory --> ViewProgress: View Progress
+    SelectTopic --> SetProgramLength
+    SetProgramLength --> ConfirmProgram
+    ConfirmProgram --> DeliverContent: Confirmed
+    ConfirmProgram --> [*]: Rejected
+    DeliverContent --> [*]
+    JustChat --> [*]
+    ViewProgress --> [*]
+```
+
+## 3. Content Generation Pipeline
+
+```mermaid
+flowchart LR
+    A[User Input] --> B[Topic Analysis]
+    B --> C[Content Type Selection]
+    C --> D[LLM Processing]
+    D --> E[Media Integration]
+    E --> F[Delivery Scheduling]
+    
+    subgraph "Content Types"
+        G[Devotion]
+        H[Prayer]
+        I[Meditation]
+        J[Accountability]
+    end
+    
+    C --> G
+    C --> H
+    C --> I
+    C --> J
+```
+
+## 4. Database Schema
+
+```mermaid
+erDiagram
+    USER_SESSIONS {
+        string session_id PK
+        string user_id
+        string current_state
+        string selected_category
+        string selected_topic
+        integer program_length
+        string program_start_date
+        integer current_day
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    CONVERSATION_HISTORY {
+        integer id PK
+        string session_id FK
+        string role
+        string content
+        timestamp timestamp
+    }
+    
+    PROGRAM_HISTORY {
+        integer id PK
+        string user_id
+        string session_id FK
+        string category
+        string topic
+        integer program_length
+        string start_date
+        string end_date
+        boolean completed
+        boolean paused
+        timestamp created_at
+    }
+    
+    DAILY_PROGRESS {
+        integer id PK
+        string session_id FK
+        integer day_number
+        boolean completed
+        timestamp completed_at
+        string notes
+    }
+    
+    USER_SESSIONS ||--o{ CONVERSATION_HISTORY : "has"
+    USER_SESSIONS ||--o{ PROGRAM_HISTORY : "has"
+    USER_SESSIONS ||--o{ DAILY_PROGRESS : "has"
+```
+
+## 5. Program Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant DSCPL
+    participant LLM
+    participant Calendar
+    participant DB
+    
+    User->>DSCPL: Start Program
+    DSCPL->>DB: Create Session
+    DSCPL->>User: Select Category
+    User->>DSCPL: Choose Category
+    DSCPL->>User: Select Topic
+    User->>DSCPL: Choose Topic
+    DSCPL->>User: Set Program Length
+    User->>DSCPL: Choose Length
+    DSCPL->>Calendar: Create Events
+    Calendar-->>DSCPL: Events Created
+    DSCPL->>DB: Save Program
+    DSCPL->>User: Program Confirmed
+    
+    loop Daily Content
+        DSCPL->>LLM: Generate Content
+        LLM-->>DSCPL: Content Ready
+        DSCPL->>User: Deliver Content
+        DSCPL->>DB: Update Progress
+    end
+```
+
+## 6. Security Flow
+
+```mermaid
+flowchart TD
+    A[User Request] --> B{Authentication}
+    B -->|Valid| C[API Key Check]
+    B -->|Invalid| D[Reject Request]
+    C -->|Valid| E[Rate Limiting]
+    C -->|Invalid| D
+    E -->|Within Limit| F[Process Request]
+    E -->|Exceeded| G[Return Error]
+    F --> H[Secure Storage]
+    H --> I[Response]
+```
+
+## 7. Notification System
+
+```mermaid
+flowchart LR
+    A[Program Start] --> B[Schedule Notifications]
+    B --> C{Notification Type}
+    C -->|Calendar| D[Google Calendar]
+    C -->|Email| E[Email Service]
+    C -->|Push| F[Push Notification]
+    
+    D --> G[User Device]
+    E --> G
+    F --> G
+```
+
+These diagrams provide a comprehensive view of the DSCPL system architecture, data flow, and component relationships. Each diagram focuses on a specific aspect of the system to help understand the overall design and implementation. 
