@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-google-genai
+google-generativeai
+tiktoken
+python-dotenv
+requests
+streamlit-option-menu
+google-api-python-client
+google-auth
+google-auth-httplib2
+google-auth-oauthlib
