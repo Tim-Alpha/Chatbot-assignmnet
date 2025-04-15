@@ -1,0 +1,73 @@
+DSCPL Chatbot
+
+This repository contains the DSCPL Chatbot, a Flask-based web application designed to provide daily devotional guidance, prayer, meditation, and accountability support. 
+The chatbot is built using Python and integrates with LangChain for conversational AI capabilities.
+
+Project Structure
+
+The project is organized as follows:
+
+├── app.py               # Main Flask application
+├── demo.py              # Core chatbot logic and state management
+├── flask_session/       # Flask session data (auto-generated during runtime)
+├── static/              # Static files (e.g., CSS, JavaScript)
+│   ├── style.css        # Styling for the chatbot interface
+│   ├── script.js        # Frontend logic for handling user interactions
+├── templates/           # HTML templates for the Flask app
+│   ├── index.html       # Main chatbot interface
+├── venv/                # Virtual environment for Python dependencies
+├── __pycache__/         # Compiled Python files (auto-generated)
+
+Features
+Daily Devotion: Provides devotion content based on user-selected topics.
+Daily Prayer: Generates prayer guides using the ACTS model.
+Daily Meditation: Offers guided meditation exercises with scripture and breathing techniques.
+Daily Accountability: Helps users create accountability plans for personal growth.
+Just Chat: Allows users to have open-ended conversations with the chatbot.
+
+Setup Instructions
+Prerequisites
+Python 3.8 or higher
+Flask
+Virtual environment (venv)
+Steps to Run the Application
+Clone the Repository:
+
+bash
+git clone <repository-url>
+cd <repository-folder>
+Set Up Virtual Environment:
+
+bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+Install Dependencies:
+
+bash
+pip install -r requirements.txt
+Run the Application:
+
+
+bash
+python app.py
+
+Access the Application: Open your browser and navigate to http://127.0.0.1:5000.
+
+Key Files
+
+app.py: The main entry point for the Flask application.
+demo.py: Contains the chatbot's logic, including state management and content generation.
+index.html: The frontend interface for interacting with the chatbot.
+style.css: Styles the chatbot interface for a clean and user-friendly experience.
+script.js: Handles user input and displays chatbot responses dynamically.
+
+Notes
+
+The flask_session and __pycache__ folders are auto-generated during runtime and do not require manual modification.
+The venv folder contains the virtual environment and should not be included in the Git repository.
+
+Future Enhancements
+
+Add user authentication for personalized experiences.
+Integrate a database to store user progress and preferences.
+Expand the chatbot's capabilities with additional topics and features.
