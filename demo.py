@@ -36,6 +36,7 @@ state = {
 }
 
 
+
 # # Define the options and responses
 # OPTIONS = {
 #     "1": "You selected Daily Devotion. Here's your devotion content.",
@@ -102,68 +103,137 @@ def accountability_topic_selection(state: AgentState):
     return {**state, "current_step": "await_accountability_topic_selection"}
 
 
-def fetch_recommended_video() -> str:
-    """
-    Fetch a random video title from the SocialVerse API.
-    If no videos are found, return a default recommendation.
-    """
-    # API endpoint and headers
-    url = "https://api.socialverseapp.com/posts/summary/get?page=1&page_size=1000"
-    headers = {"Flic-Token": "flic_b1c6b09d98e2d4884f61b9b3131dbb27a6af84788e4a25db067a22008ea9cce5"}
-    
-    try:
-        # Make the API request
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an error for bad HTTP status codes
-        
-        # Parse the JSON response
-        data = response.json()
-        
-        # Access the correct key containing video data
-        posts = data.get('data', [])  # Adjusted to match the correct key
-        
-        # Check if there are any posts
-        if posts:
-            # Randomly select a video title
-            video = random.choice(posts)
-            title = video.get('title', 'No title available')
-        
-            return title
-        else:
-            
-            return "No videos found. Here's a default recommendation: 'Be Inspired Today!'"
-    
-    except requests.exceptions.RequestException as e:
-        # Handle HTTP request errors
-        return "Error fetching video. Please try again later."
-    except Exception as e:
-        # Handle other errors
-        return "Error fetching video. Please try again later."
 
-        print(f"Error fetching YouTube video: {e}")
-        return "Error fetching video."
+# def fetch_recommended_video() -> str:
+#     url = "https://api.socialverseapp.com/posts/summary/get?page=1&page_size=1000"
+#     headers = {"Flic-Token": "flic_b1c6b09d98e2d4884f61b9b3131dbb27a6af84788e4a25db067a22008ea9cce5"}
+    
+#     # try:
+#     #     response = requests.get(url, headers=headers, timeout=10)
+#     #     response.raise_for_status()  # Check HTTP errors
+#     #     data = response.json()
+        
+#     #     # Handle list structure correctly
+#     #     if data.get('data') and isinstance(data['data'], list):
+#     #         first_post = data['data'][0]  # Access first item in list
+#     #         return first_post.get('title', '')
+#     #     return ''
+    
+#     try:
+#         response = requests.get(url, headers=headers, timeout=10)
+#         response.raise_for_status()  # Triggers HTTPError for 4xx/5xx
+#     except requests.exceptions.HTTPError as e:
+#         if e.response.status_code == 401:
+#             print("Token expired/invalid. Regenerate credentials.")
+#         elif e.response.status_code == 403:
+#             print("Missing permissions. Update token scope.")
+
+
+import json
+import random
+from difflib import get_close_matches
+
+def fetch_recommended_video(topic: str) -> str:
+    """Fetch video from output.json using fuzzy category matching"""
+    try:
+        with open('output.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        posts = data.get('posts', [])
+        matches = []
+        
+        # Topic to keyword mapping
+        keyword_map = {
+            "Dealing with Stress": ["stress", "anxiety", "peace"],
+            "Overcoming Fear": ["fear", "courage", "bravery"],
+            "Conquering Depression": ["depression", "hope", "joy"],
+            "Relationships": ["relationships", "love", "marriage"],
+            "Healing": ["healing", "recovery", "health"],
+            "Purpose & Calling": ["purpose", "vocation", "mission"],
+            "Anxiety": ["anxiety", "worry", "peace"]
+        }
+        
+        for post in posts:
+            
+            categories = []
+            category_data = post.get('category', {})
+            
+            if isinstance(category_data, list):
+                categories = [str(cat.get('name', '')).lower() for cat in category_data if isinstance(cat, dict)]
+            elif isinstance(category_data, dict):
+                categories = [str(category_data.get('name', '')).lower()]
+                
+            
+            for keyword in keyword_map.get(topic, []):
+                
+                direct_matches = [cat for cat in categories if keyword in cat]
+                if direct_matches:
+                    matches.append(post)
+                    break
+                    
+    
+                close_matches = get_close_matches(keyword, categories, n=1, cutoff=0.6)
+                if close_matches:
+                    matches.append(post)
+                    break
+                    
+        if matches:
+
+            chosen = random.choice(matches)
+            return f"{chosen.get('title', 'Untitled')} - {chosen.get('video_link', 'No link')}"
+            
+        return "No matching videos found"
+        
+    except FileNotFoundError:
+        return "Data file not available"
+    except json.JSONDecodeError:
+        return "Invalid data format"
+
+
 
 
 def generate_devotion_content(topic: str) -> str:
     """
     Generate daily devotion content based on the selected topic.
     """
-    video_title = fetch_recommended_video()
+    video_info = fetch_recommended_video(topic)
     
     prompt = (
         f"Write a short daily devotion about {topic}. Include:\n"
-        "- A Bible verse (book and chapter)\n"
-        "- A reflection paragraph\n"
-        "- A practical application for the day\n"
-        f"- A recommended Video: {video_title}\n"
-        "Use bold (**text**) for section headers and avoid using * or other markdown symbols.\n"
-        "Write under 567 words and ensure all sections are complete."
+        "- **Bible Verse**: A relevant verse (include book and chapter)\n"
+        "- **Reflection**: A thoughtful paragraph connecting the verse to daily life\n"
+        "- **Application**: One practical action to apply today\n"
+        f"- **Recommended Resource**: {video_info}\n"
+        "Use only bold (**) for section headers. Keep it under 200 words."
     )
-
+    
     try:
         return llm.invoke(prompt).content
     except Exception as e:
         return f"Error generating devotion content: {str(e)}"
+
+
+
+# def generate_devotion_content(topic: str) -> str:
+#     """
+#     Generate daily devotion content based on the selected topic.
+#     """
+#     video_title = fetch_recommended_video()
+
+#     prompt = (
+#         f"Write a short daily devotion about {topic}. Include:\n"
+#         "- A Bible verse (book and chapter)\n"
+#         "- A reflection paragraph\n"
+#         "- A practical application for the day\n"
+#         f"- A recommended Video: {video_title}\n"
+#         "Use bold (**text**) for section headers and avoid using * or other markdown symbols.\n"
+        
+#     )
+
+#     try:
+#         return llm.invoke(prompt).content
+#     except Exception as e:
+#         return f"Error generating devotion content: {str(e)}"
 
 
 
@@ -199,12 +269,12 @@ def generate_accountability_content(topic: str) -> str:
     """
     Generate daily prayer content based on the selected topic.
     """
-    
+
     prompt = (
         f"Create an accountability plan with:\n- Relevant scripture\n- Truth declaration\n- Action steps\n related to {topic}\n"
         "Use bold (**text**) for section headers and avoid using * or other markdown symbols."
         "write under 567 words"
-        
+
     )
     return llm_program.invoke(prompt).content
 
@@ -280,7 +350,7 @@ def handle_selection(state: AgentState):
         "accountability": "4", "daily accountability": "4",
         "chat": "5", "just chat": "5"
     }
-    
+
     if "resume program" in last_input or "daily check-in" in last_input:
         if state.get("active_program"):
             state["current_step"] = "program_active"
@@ -342,14 +412,14 @@ def handle_devotion_topic_selection(state: AgentState):
         if last_input == "8":
             state["messages"].append(AIMessage(content="What would you like help with?"))
             return {**state, "current_step": "await_custom_help"}
-        
+
         state["current_topic"] = topic_map[last_input]  # Store topic
         response = generate_devotion_content(state["current_topic"])
         state["messages"].append(AIMessage(content=response))
         state["messages"].append(AIMessage(content=f"Would you like to start a structured program for {topic_map[last_input]}? (yes/no)"))
         return {**state, "current_step": "await_program_interest"}
 
-    
+
     state["messages"].append(AIMessage(content="Please select a valid topic (1-8)"))
     return {**state, "current_step": "await_devotion_topic_selection"}
 
@@ -407,7 +477,7 @@ def handle_meditation_topic_selection(state: AgentState):
         if last_input == "6":  # User selected "Something else"
             state["messages"].append(AIMessage(content="What do you need help with?"))
             return {**state, "current_step": "await_custom_help"}  # Transition to custom help mode
-        
+
     if last_input in topic_map:
         # Generate meditation content for the selected topic
         topic = topic_map[last_input]
@@ -463,12 +533,12 @@ def handle_just_chat(state: AgentState):
         [f"{'User' if isinstance(m, HumanMessage) else 'Bot'}: {m.content}" 
          for m in state["messages"][-5:]]
     )
-    
+
     last_input = next(
         (msg.content for msg in reversed(state["messages"]) if isinstance(msg, HumanMessage)),
         ""
     ).strip()
-    
+
     # Check if the user wants to resume a program
     if "resume program" in last_input or "daily check-in" in last_input:
         state["messages"].append(AIMessage(content="""Resuming your program... \n Daily Program Check-In:\n
@@ -481,12 +551,12 @@ def handle_just_chat(state: AgentState):
     if "start program" in last_input:                                           
         state["messages"].append(AIMessage(content="What topic would you like to explore?"))
         return {**state, "current_step": "await_program_interest"}
-    
+
     # Check if the user wants to end the conversation
     if "end conversation" in last_input or "exit" in last_input:
         state["messages"].append(AIMessage(content="God bless you! Type anything to restart."))
         return {**state, "current_step": "end"}
-    
+
     # Check if the user wants to see options again  
     if "options" in last_input or "what are the five options" in last_input:
         state["messages"].append(AIMessage(content="Here are the five options:\n"
@@ -496,7 +566,7 @@ def handle_just_chat(state: AgentState):
                                                    "4. Daily Accountability\n"
                                                    "5. Just Chat"))
         return {**state, "current_step": "await_selection"}
-    
+
     # Check if the user wants to see the main menu
     if "main menu" in last_input or "return to main menu" in last_input:
         state["messages"].append(AIMessage(content="Here are the five options:\n"
@@ -506,12 +576,10 @@ def handle_just_chat(state: AgentState):
                                                    "4. Daily Accountability\n"
                                                    "5. Just Chat"))
         return {**state, "current_step": "await_selection"}
-    
+
     # Generate a response based on user input and conversation history
     prompt = f"""Conversation history: {history}
-
         Current user message: {last_input}
-
         Provide a compassionate, faith-based response that:
         - Acknowledges previous discussions
         - Offers spiritual guidance
@@ -533,7 +601,7 @@ def handle_custom_help(state: AgentState):
         [f"{'User' if isinstance(m, HumanMessage) else 'Bot'}: {m.content}" 
          for m in state["messages"][-5:]]
     )
-    
+
     last_input = next(
         (msg.content for msg in reversed(state["messages"]) if isinstance(msg, HumanMessage)),
         ""
@@ -541,9 +609,7 @@ def handle_custom_help(state: AgentState):
 
     # Generate a conversational response based on user input and history
     prompt = f"""Conversation Context:{history}
-
     Current User Message: {last_input}
-
     Provide spiritual guidance that:
     - References previous discussions if relevant
     - Addresses the current concern
@@ -569,7 +635,7 @@ def handle_program_interest(state: AgentState):
     elif last_input == "no":
         state["messages"].append(AIMessage(content="What else can I help you with?"))
         return {**state, "current_step": "await_just_chat"}
-    
+
     # Check if the user wants to see options again  
     if "options" in last_input or "what are the five options" in last_input:
         state["messages"].append(AIMessage(content="Here are the five options:\n"
@@ -579,7 +645,7 @@ def handle_program_interest(state: AgentState):
                                                    "4. Daily Accountability\n"
                                                    "5. Just Chat"))
         return {**state, "current_step": "await_selection"}
-    
+
     # Check if the user wants to see the main menu
     if "main menu" in last_input or "return to main menu" in last_input:
         state["messages"].append(AIMessage(content="Here are the five options:\n"
@@ -590,7 +656,7 @@ def handle_program_interest(state: AgentState):
                                                    "5. Just Chat"))
         return {**state, "current_step": "await_selection"}
 
-    
+
     state["messages"].append(AIMessage(content="Returning to main menu..."))
     return {**state, "current_step": "initial_selection"}
 
@@ -609,10 +675,10 @@ def handle_program_length(state: AgentState):
             "start_date": datetime.now().strftime("%Y-%m-%d"),
             "progress": 0
         }
-        
+
         state["active_program"] = program
         program_content = generate_program(program['topic'], int(last_input))
-        
+
         # Add program content and check-in prompt
         state["messages"].append(AIMessage(
             content=f"""🎉 Program Started!
@@ -620,7 +686,7 @@ Topic: {program['topic']}
 Duration: {last_input} days
 {program_content}"""
         ))
-        
+
         # Add Daily Check-In message
         state["messages"].append(AIMessage(
             content="""Daily Program Check-In:
@@ -628,9 +694,9 @@ Duration: {last_input} days
 2. View progress
 3. Exit program"""
         ))
-        
+
         return {**state, "current_step": "program_active"}
-    
+
     # Handle invalid input for program length
     state["messages"].append(AIMessage(content="Invalid input. Please choose 7/14/30"))
     return {**state, "current_step": "await_program_length"}
@@ -642,14 +708,14 @@ def final_response(state: AgentState):
         (msg.content.lower() for msg in reversed(state["messages"]) if isinstance(msg, HumanMessage)),
         ""
     )
-    
+
     if last_input == "yes":
         # Keep conversation history for continuity
         state["messages"].append(AIMessage(
             content="What else can I help you with today?"
         ))
         return {**state, "current_step": "initial_selection"}
-    
+
     state["messages"].append(AIMessage(
         content="God bless you! Our conversation history will be saved until you restart."
     ))
@@ -672,7 +738,6 @@ def classify_user_intent(user_input: str) -> str:
     - "just_chat" for Just Chat mode (e.g., "chat", "I just want to talk").
     - "main_menu" for returning to the main menu (e.g., "main menu", "back to main menu").
     - "invalid" if the input does not match any intent.
-
     User Input: {user_input}
     Return the intent as a single word from the above options.
     """
@@ -682,7 +747,7 @@ def classify_user_intent(user_input: str) -> str:
     except Exception as e:
         print(f"Error classifying intent: {e}")
         return "invalid"
-    
+
 
 # def handle_progress(state: AgentState, user_input: str) -> AgentState:
 #     """
@@ -772,6 +837,7 @@ def handle_progress(state: AgentState, user_input: str) -> AgentState:
 
 
 if __name__ == "__main__":
+
     state = {
         "messages": [],
         "current_step": "initial_selection",
@@ -811,7 +877,7 @@ if __name__ == "__main__":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
             state = handle_devotion_topic_selection(state)
-        
+
         elif state["current_step"] == "await_prayer_topic_selection":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
@@ -821,7 +887,7 @@ if __name__ == "__main__":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
             state = handle_meditation_topic_selection(state)
-        
+
         elif state["current_step"] == "await_accountability_topic_selection":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
@@ -850,7 +916,7 @@ if __name__ == "__main__":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
             state = handle_program_interest(state)
-        
+
         elif state["current_step"] == "await_program_length":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
@@ -860,9 +926,9 @@ if __name__ == "__main__":
             user_input = input("\nYour response: ")
             state["messages"].append(HumanMessage(content=user_input))
             state = handle_progress(state, user_input)
-        
+
         intent = classify_user_intent(user_input)
-        
+
         if intent == "devotion":
             state = devotion_topic_selection(state)
         elif intent == "prayer":
@@ -894,5 +960,3 @@ if __name__ == "__main__":
             state["current_step"] = "initial_selection"
         elif intent == "main_menu":
             state = initial_selection(state)
-    
-
